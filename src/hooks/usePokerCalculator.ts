@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { describeHandJa, evaluateHand } from '../poker/evaluator';
 import { analyzeDraws } from '../poker/outs';
 import type { EquityComputeInput } from '../poker/equity';
+import { canonicalHandKey, PREFLOP_RANDOM_TABLE } from '../poker/preflopRandomTable';
 import type { Card, DrawInfo, EquityResultData, OpponentMode, Phase } from '../poker/types';
 import type { EquityRequestMessage, EquityResponseMessage } from '../workers/equityWorker';
 
@@ -113,15 +114,36 @@ export function usePokerCalculator(): PokerCalculator {
   );
 
   useEffect(() => {
+    // Any request in flight is now stale; requestId no longer matching means the
+    // worker will ignore its result even if it's still running (and it never was,
+    // for the preflop-vs-random path below).
+    requestIdRef.current++;
+
     if (!validation.ready || !validation.input) {
       setResult(null);
       setIsCalculating(false);
       setProgressPct(null);
       return;
     }
+
+    const { heroCards: hero, boardCards: board, opponent } = validation.input;
+    if (opponent.mode === 'random' && board.length === 0) {
+      // Preflop vs. a fully random opponent is the one case exhaustive enumeration
+      // is too slow for live computation (~2.1B combinations) — but the answer only
+      // depends on the two hole card ranks and suitedness, so it's precomputed for
+      // all 169 canonical starting hands (see preflopRandomTable.ts).
+      const table = PREFLOP_RANDOM_TABLE[canonicalHandKey(hero[0], hero[1])];
+      if (table) {
+        setResult(table);
+        setIsCalculating(false);
+        setProgressPct(null);
+        return;
+      }
+    }
+
     const worker = workerRef.current;
     if (!worker) return;
-    const requestId = ++requestIdRef.current;
+    const requestId = requestIdRef.current;
     setIsCalculating(true);
     setProgressPct(0);
     setResult(null);
