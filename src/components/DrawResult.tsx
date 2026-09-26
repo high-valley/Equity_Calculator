@@ -5,10 +5,10 @@ export function DrawResult({ draw }: { draw: DrawInfo }) {
   return (
     <section className="panel draw-panel">
       <div className="draw-badges">
-        {draw.flushDraw && <span className="draw-badge">FLUSH DRAW</span>}
-        {draw.straightDraw && <span className="draw-badge">STRAIGHT DRAW</span>}
+        {draw.flushDraw && <span className="draw-badge">フラッシュドロー</span>}
+        {draw.straightDraw && <span className="draw-badge">ストレートドロー</span>}
       </div>
-      <p className="draw-outs">OUTS: {draw.outs} cards</p>
+      <p className="draw-outs">アウツ: {draw.outs}枚</p>
     </section>
   );
 }

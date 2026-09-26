@@ -20,7 +20,7 @@ export function PlayingCard({ card, size = 'md', onClick, disabled, faded }: Car
       className={className}
       onClick={onClick}
       disabled={disabled}
-      aria-label={card ? cardAriaLabel(card) : 'Empty card slot'}
+      aria-label={card ? cardAriaLabel(card) : '空のカード枠'}
     >
       {card ? (
         <>

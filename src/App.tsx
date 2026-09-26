@@ -44,9 +44,9 @@ function App() {
   }
 
   const pickerTitles: Record<PickerKind, string> = {
-    hero: 'Select Your Card',
-    board: 'Select Board Card',
-    opponent: "Select Opponent's Card",
+    hero: 'あなたのカードを選択',
+    board: 'ボードのカードを選択',
+    opponent: '相手のカードを選択',
   };
 
   const hasCurrentCard = Boolean(picker && currentCardIdFor(picker));
@@ -55,15 +55,15 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <h1>
-          Texas Hold&apos;em
+          テキサスホールデム
           <br />
-          Equity Calculator
+          勝率計算機
         </h1>
       </header>
 
       <PhaseIndicator phase={calc.phase} />
 
-      <HandSelector title="YOUR HAND" slots={calc.heroSlots} onOpen={(index) => setPicker({ kind: 'hero', index: index as 0 | 1 })} />
+      <HandSelector title="あなたの手札" slots={calc.heroSlots} onOpen={(index) => setPicker({ kind: 'hero', index: index as 0 | 1 })} />
 
       <Board cards={calc.boardCards} onOpen={(index) => setPicker({ kind: 'board', index })} />
 

@@ -50,27 +50,27 @@ export const RANK_LABEL: Record<Rank, string> = {
   '2': '2',
 };
 
-const RANK_NAME: Record<Rank, string> = {
-  A: 'Ace',
-  K: 'King',
-  Q: 'Queen',
-  J: 'Jack',
-  T: 'Ten',
-  '9': 'Nine',
-  '8': 'Eight',
-  '7': 'Seven',
-  '6': 'Six',
-  '5': 'Five',
-  '4': 'Four',
-  '3': 'Three',
-  '2': 'Two',
+const RANK_NAME_JA: Record<Rank, string> = {
+  A: 'エース',
+  K: 'キング',
+  Q: 'クイーン',
+  J: 'ジャック',
+  T: '10',
+  '9': '9',
+  '8': '8',
+  '7': '7',
+  '6': '6',
+  '5': '5',
+  '4': '4',
+  '3': '3',
+  '2': '2',
 };
 
-const SUIT_NAME: Record<Suit, string> = {
-  spades: 'Spades',
-  hearts: 'Hearts',
-  diamonds: 'Diamonds',
-  clubs: 'Clubs',
+const SUIT_NAME_JA: Record<Suit, string> = {
+  spades: 'スペード',
+  hearts: 'ハート',
+  diamonds: 'ダイヤ',
+  clubs: 'クラブ',
 };
 
 export function cardId(rank: Rank, suit: Suit): string {
@@ -82,7 +82,7 @@ export function makeCard(rank: Rank, suit: Suit): Card {
 }
 
 export function cardAriaLabel(card: Card): string {
-  return `${RANK_NAME[card.rank]} of ${SUIT_NAME[card.suit]}`;
+  return `${SUIT_NAME_JA[card.suit]}の${RANK_NAME_JA[card.rank]}`;
 }
 
 export function isRedSuit(suit: Suit): boolean {

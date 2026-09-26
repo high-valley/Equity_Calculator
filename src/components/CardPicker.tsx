@@ -25,7 +25,7 @@ export function CardPicker({ title, usedCardIds, currentCardId, onSelect, onClea
       <div className="picker-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="picker-header">
           <span className="picker-title">{title}</span>
-          <button type="button" className="picker-close" onClick={onClose} aria-label="Close">
+          <button type="button" className="picker-close" onClick={onClose} aria-label="閉じる">
             ×
           </button>
         </div>
@@ -56,7 +56,7 @@ export function CardPicker({ title, usedCardIds, currentCardId, onSelect, onClea
         </div>
         {onClear && (
           <button type="button" className="picker-clear" onClick={onClear}>
-            Remove Card
+            カードを外す
           </button>
         )}
       </div>
