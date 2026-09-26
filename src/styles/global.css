@@ -484,11 +484,21 @@ button {
   cursor: pointer;
 }
 
+.picker-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* One box per suit, so it's clear which numbers belong to which suit when a row wraps. */
 .picker-suit-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 0;
+  padding: 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* White tile so black suits (♠ ♣) stay visible on the dark sheet, like on the cards. */
