@@ -8,6 +8,7 @@ import { HandResult } from './components/HandResult';
 import { DrawResult } from './components/DrawResult';
 import { ResetButton } from './components/ResetButton';
 import { CardPicker } from './components/CardPicker';
+import { VersionFooter } from './components/VersionFooter';
 import { usePokerCalculator } from './hooks/usePokerCalculator';
 import type { Card } from './poker/types';
 
@@ -86,6 +87,7 @@ function App() {
       <DrawResult draw={calc.drawInfo} />
 
       <ResetButton onReset={calc.reset} />
+      <VersionFooter />
 
       {picker && (
         <CardPicker
