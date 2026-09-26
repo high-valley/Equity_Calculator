@@ -491,10 +491,18 @@ button {
   padding: 6px 0;
 }
 
+/* White tile so black suits (♠ ♣) stay visible on the dark sheet, like on the cards. */
 .picker-suit-symbol {
-  width: 24px;
-  text-align: center;
-  font-size: 1.3rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--card-white);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  font-size: 1.25rem;
+  line-height: 1;
   flex-shrink: 0;
 }
 
