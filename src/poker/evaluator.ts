@@ -80,3 +80,47 @@ export function describeHand(value: HandValue): string {
       return CATEGORY_NAME[category];
   }
 }
+
+const RANK_NAME_JA: Record<number, string> = {
+  14: 'エース',
+  13: 'キング',
+  12: 'クイーン',
+  11: 'ジャック',
+  10: '10',
+  9: '9',
+  8: '8',
+  7: '7',
+  6: '6',
+  5: '5',
+  4: '4',
+  3: '3',
+  2: '2',
+};
+
+/** Japanese hand name for UI display, e.g. "ワンペア（キング）", "ツーペア（エースとキング）". */
+export function describeHandJa(value: HandValue): string {
+  const { category, kickers } = value;
+  const r = (v: number) => RANK_NAME_JA[v];
+  switch (category) {
+    case HandCategory.StraightFlush:
+      return kickers[0] === 14 ? 'ロイヤルフラッシュ' : `ストレートフラッシュ（${r(kickers[0])}ハイ）`;
+    case HandCategory.FourOfAKind:
+      return `フォーカード（${r(kickers[0])}）`;
+    case HandCategory.FullHouse:
+      return `フルハウス（${r(kickers[0])}のスリーカードと${r(kickers[1])}のペア）`;
+    case HandCategory.Flush:
+      return `フラッシュ（${r(kickers[0])}ハイ）`;
+    case HandCategory.Straight:
+      return `ストレート（${r(kickers[0])}ハイ）`;
+    case HandCategory.ThreeOfAKind:
+      return `スリーカード（${r(kickers[0])}）`;
+    case HandCategory.TwoPair:
+      return `ツーペア（${r(kickers[0])}と${r(kickers[1])}）`;
+    case HandCategory.OnePair:
+      return `ワンペア（${r(kickers[0])}）`;
+    case HandCategory.HighCard:
+      return `ハイカード（${r(kickers[0])}）`;
+    default:
+      return '';
+  }
+}

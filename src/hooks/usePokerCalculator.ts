@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { describeHand, evaluateHand } from '../poker/evaluator';
+import { describeHandJa, evaluateHand } from '../poker/evaluator';
 import { analyzeDraws } from '../poker/outs';
 import type { EquityComputeInput } from '../poker/equity';
 import type { Card, DrawInfo, EquityResultData, OpponentMode, Phase } from '../poker/types';
@@ -26,15 +26,15 @@ interface Validation {
 
 function validate(hero: Card[], board: Card[], opponentMode: OpponentMode, opponentCards: Card[]): Validation {
   if (hero.length < 2) {
-    return { ready: false, message: hero.length === 0 ? 'Select your 2 hole cards.' : 'Select 1 more card.' };
+    return { ready: false, message: hero.length === 0 ? '手札を2枚選んでください。' : 'あと1枚選んでください。' };
   }
   if (![0, 3, 4, 5].includes(board.length)) {
-    return { ready: false, message: 'Please complete the flop.' };
+    return { ready: false, message: 'フロップを完成させてください。' };
   }
   if (opponentMode === 'specific' && opponentCards.length < 2) {
     return {
       ready: false,
-      message: opponentCards.length === 0 ? "Select the opponent's 2 cards." : 'Select 1 more opponent card.',
+      message: opponentCards.length === 0 ? '相手のカードを2枚選んでください。' : '相手のカードをあと1枚選んでください。',
     };
   }
   return {
@@ -136,7 +136,7 @@ export function usePokerCalculator(): PokerCalculator {
   const currentHandLabel = useMemo(() => {
     const combined = [...heroCards, ...boardCards];
     const value = evaluateHand(combined);
-    return value ? describeHand(value) : null;
+    return value ? describeHandJa(value) : null;
   }, [heroCards, boardCards]);
 
   const drawInfo = useMemo(() => analyzeDraws(heroCards, boardCards), [heroCards, boardCards]);

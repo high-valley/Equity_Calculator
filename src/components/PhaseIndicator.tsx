@@ -9,7 +9,7 @@ const PHASES: { key: Phase; label: string }[] = [
 
 export function PhaseIndicator({ phase }: { phase: Phase }) {
   return (
-    <div className="phase-indicator" role="tablist" aria-label="Current phase">
+    <div className="phase-indicator" role="tablist" aria-label="現在のフェーズ">
       {PHASES.map((p) => (
         <span key={p.key} className={`phase-pill ${p.key === phase ? 'phase-pill-active' : ''}`} role="tab" aria-selected={p.key === phase}>
           {p.label}

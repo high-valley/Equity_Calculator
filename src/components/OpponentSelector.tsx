@@ -11,21 +11,21 @@ export interface OpponentSelectorProps {
 export function OpponentSelector({ mode, slots, onModeChange, onOpenSlot }: OpponentSelectorProps) {
   return (
     <section className="panel">
-      <h2 className="panel-title">OPPONENT</h2>
+      <h2 className="panel-title">相手</h2>
       <div className="segmented">
         <button
           type="button"
           className={`segmented-btn ${mode === 'random' ? 'segmented-btn-active' : ''}`}
           onClick={() => onModeChange('random')}
         >
-          Random
+          ランダム
         </button>
         <button
           type="button"
           className={`segmented-btn ${mode === 'specific' ? 'segmented-btn-active' : ''}`}
           onClick={() => onModeChange('specific')}
         >
-          Specific Hand
+          ハンド指定
         </button>
       </div>
       {mode === 'specific' && (

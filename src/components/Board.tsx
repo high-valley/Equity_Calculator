@@ -11,7 +11,7 @@ const BOARD_SIZE = 5;
 export function Board({ cards, onOpen }: BoardProps) {
   return (
     <section className="panel">
-      <h2 className="panel-title">BOARD</h2>
+      <h2 className="panel-title">ボード</h2>
       <div className="card-row">
         {Array.from({ length: BOARD_SIZE }, (_, i) => {
           const card = cards[i] ?? null;

@@ -10,8 +10,8 @@ export interface EquityResultProps {
 }
 
 const EXPLANATION =
-  'Equity is the share of the pot you expect to win on average if the hand were played out from here. ' +
-  'A tie counts as winning half the pot.';
+  'エクイティとは、現在の状況から最終的にポットを獲得すると期待される割合です。' +
+  '引き分けの場合はポットの半分を獲得するとして計算します。';
 
 export function EquityResult({ result, isCalculating, progressPct, blocked, message }: EquityResultProps) {
   const [showInfo, setShowInfo] = useState(false);
@@ -19,12 +19,12 @@ export function EquityResult({ result, isCalculating, progressPct, blocked, mess
   return (
     <section className="panel equity-panel">
       <div className="equity-header">
-        <h2 className="panel-title">EQUITY</h2>
+        <h2 className="panel-title">エクイティ</h2>
         <button
           type="button"
           className="info-btn"
           onClick={() => setShowInfo((v) => !v)}
-          aria-label="What is equity?"
+          aria-label="エクイティとは？"
         >
           i
         </button>
@@ -39,7 +39,7 @@ export function EquityResult({ result, isCalculating, progressPct, blocked, mess
 
           {isCalculating && (
             <div className="calc-status">
-              <span>Calculating...</span>
+              <span>計算中...</span>
               {progressPct !== null && (
                 <div className="progress-track">
                   <div className="progress-fill" style={{ width: `${progressPct.toFixed(0)}%` }} />
@@ -50,9 +50,9 @@ export function EquityResult({ result, isCalculating, progressPct, blocked, mess
 
           {result && (
             <div className="equity-bars">
-              <EquityBar label="WIN" pct={result.winPct} className="bar-win" />
-              <EquityBar label="TIE" pct={result.tiePct} className="bar-tie" />
-              <EquityBar label="LOSE" pct={result.losePct} className="bar-lose" />
+              <EquityBar label="勝ち" pct={result.winPct} className="bar-win" />
+              <EquityBar label="引分" pct={result.tiePct} className="bar-tie" />
+              <EquityBar label="負け" pct={result.losePct} className="bar-lose" />
             </div>
           )}
         </>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateHand, describeHand } from '../evaluator';
+import { evaluateHand, describeHand, describeHandJa } from '../evaluator';
 import { HandCategory } from '../types';
 import { cards } from './testHelpers';
 
@@ -101,5 +101,15 @@ describe('describeHand', () => {
     expect(describeHand(evaluateHand(cards(['Ks', 'Kh', 'Kd', '7c', '2h']))!)).toBe('Three of a Kind, Kings');
     expect(describeHand(evaluateHand(cards(['Ks', 'Kh', '7c', '7d', '2h']))!)).toBe('Two Pair, Kings and Sevens');
     expect(describeHand(evaluateHand(cards(['Ks', 'Kh', '7c', '9d', '2h']))!)).toBe('Pair of Kings');
+  });
+});
+
+describe('describeHandJa', () => {
+  it('produces Japanese hand names', () => {
+    expect(describeHandJa(evaluateHand(cards(['As', 'Ks', 'Qs', 'Js', 'Ts']))!)).toBe('ロイヤルフラッシュ');
+    expect(describeHandJa(evaluateHand(cards(['Ks', 'Kh', 'Kd', '7c', '2h']))!)).toBe('スリーカード（キング）');
+    expect(describeHandJa(evaluateHand(cards(['Ks', 'Kh', '7c', '7d', '2h']))!)).toBe('ツーペア（キングと7）');
+    expect(describeHandJa(evaluateHand(cards(['Ks', 'Kh', '7c', '9d', '2h']))!)).toBe('ワンペア（キング）');
+    expect(describeHandJa(evaluateHand(cards(['As', 'Kd', 'Qc', 'Jh', '9s']))!)).toBe('ハイカード（エース）');
   });
 });
