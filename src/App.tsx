@@ -9,7 +9,9 @@ import { DrawResult } from './components/DrawResult';
 import { ResetButton } from './components/ResetButton';
 import { CardPicker } from './components/CardPicker';
 import { VersionFooter } from './components/VersionFooter';
+import { SettingsButton } from './components/SettingsButton';
 import { usePokerCalculator } from './hooks/usePokerCalculator';
+import { useBgm } from './hooks/useBgm';
 import type { Card } from './poker/types';
 
 type PickerKind = 'hero' | 'opponent' | 'board';
@@ -17,6 +19,7 @@ type PickerTarget = { kind: 'hero' | 'opponent'; index: 0 | 1 } | { kind: 'board
 
 function App() {
   const calc = usePokerCalculator();
+  const bgm = useBgm();
   const [picker, setPicker] = useState<PickerTarget>(null);
 
   const usedCardIds = new Set(calc.usedCards.map((c) => c.id));
@@ -55,6 +58,7 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
+        <SettingsButton bgmEnabled={bgm.enabled} onToggleBgm={bgm.toggle} />
         <h1>
           テキサスホールデム
           <br />
