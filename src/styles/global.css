@@ -61,6 +61,7 @@ button {
 }
 
 .app-header {
+  position: relative;
   text-align: center;
   padding: 4px 0 6px;
 }
@@ -398,6 +399,80 @@ button {
 
 .reset-btn:active {
   transform: scale(0.98);
+}
+
+/* Settings */
+.settings-root {
+  position: absolute;
+  top: 2px;
+  right: 0;
+}
+
+.settings-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+  color: var(--gold);
+  font-size: 1.05rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-popover {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  min-width: 140px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.settings-switch {
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings-switch-knob {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.settings-switch-on {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.settings-switch-on .settings-switch-knob {
+  background: var(--bg-deep);
+  transform: translateX(18px);
 }
 
 /* Version footer */
