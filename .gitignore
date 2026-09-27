@@ -5,3 +5,9 @@ dist-ssr
 .DS_Store
 *.tsbuildinfo
 .claude/
+
+# scripts/generatePreflopRandomTable.mjs: compiled worker build + raw intermediate
+# data. The committed deliverable is src/poker/preflopRandomTable.ts; these are
+# regenerable inputs to producing it (see scripts/generatePreflopRandomTable.mjs).
+scripts/.preflop-build/
+scripts/generated/

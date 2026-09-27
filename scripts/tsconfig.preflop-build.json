@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "./.preflop-build",
+    "declaration": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "strict": true
+  },
+  "include": ["../src/poker/**/*.ts"],
+  "exclude": ["../src/poker/__tests__/**"]
+}
