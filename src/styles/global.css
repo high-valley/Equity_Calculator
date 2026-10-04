@@ -191,6 +191,14 @@ button {
   margin-top: 10px;
 }
 
+.opp-equity {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gold-bright);
+  text-align: right;
+}
+
 .opp-remove-btn {
   width: 26px;
   height: 26px;

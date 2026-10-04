@@ -139,6 +139,78 @@ describe('computeEquitySync', () => {
     });
   });
 
+  describe('opponentResults: each opponent gets their own win/tie/lose/equity split', () => {
+    it('AA vs KK: the opponent (KK) sees exactly the mirror image of hero', () => {
+      const result = computeEquitySync({
+        heroCards: [cards(['As'])[0], cards(['Ah'])[0]],
+        boardCards: [],
+        opponents: [{ mode: 'specific', cards: cards(['Kd', 'Kc']) }],
+      });
+      const opp = result.opponentResults![0];
+      expect(opp.winPct).toBeCloseTo(result.losePct, 10);
+      expect(opp.losePct).toBeCloseTo(result.winPct, 10);
+      expect(opp.tiePct).toBeCloseTo(result.tiePct, 10);
+      expect(opp.equityPct).toBeCloseTo(100 - result.equityPct, 10);
+    });
+
+    it('a fully determined river hand: the losing opponent is 100% lose, 0% equity', () => {
+      const result = computeEquitySync({
+        heroCards: [cards(['As'])[0], cards(['Ks'])[0]],
+        boardCards: cards(['Ad', 'Kd', 'Qd', 'Jd', '2c']),
+        opponents: [{ mode: 'specific', cards: cards(['2s', '3s']) }],
+      });
+      const opp = result.opponentResults![0];
+      expect(opp.losePct).toBe(100);
+      expect(opp.winPct).toBe(0);
+      expect(opp.equityPct).toBe(0);
+    });
+
+    it('3-way royal-flush-board tie: every opponent individually shows a 1/3 split too, not just hero', () => {
+      const royalFlushBoard = cards(['Ts', 'Js', 'Qs', 'Ks', 'As']);
+      const result = computeEquitySync({
+        heroCards: [cards(['2h'])[0], cards(['3h'])[0]],
+        boardCards: royalFlushBoard,
+        opponents: [
+          { mode: 'specific', cards: cards(['2c', '3c']) },
+          { mode: 'specific', cards: cards(['2d', '3d']) },
+        ],
+      });
+      for (const opp of result.opponentResults!) {
+        expect(opp.tiePct).toBe(100);
+        expect(opp.equityPct).toBeCloseTo(100 / 3, 10);
+      }
+    });
+
+    it('quads beats two weaker specific opponents outright: both opponents are 100% lose', () => {
+      const result = computeEquitySync({
+        heroCards: [cards(['As'])[0], cards(['Ah'])[0]],
+        boardCards: cards(['Ad', 'Ac', '7h', '2c', '3d']),
+        opponents: [
+          { mode: 'specific', cards: cards(['Kd', 'Kc']) },
+          { mode: 'specific', cards: cards(['Qd', 'Qc']) },
+        ],
+      });
+      expect(result.opponentResults).toHaveLength(2);
+      for (const opp of result.opponentResults!) {
+        expect(opp.losePct).toBe(100);
+        expect(opp.equityPct).toBe(0);
+      }
+    });
+
+    it('2 random opponents at the river: every player (hero + both opponents) sums to 100% equity', () => {
+      const result = computeEquitySync({
+        heroCards: [cards(['As'])[0], cards(['Ks'])[0]],
+        boardCards: cards(['2s', '5s', '9s', '4h', '7d']),
+        opponents: Array.from({ length: 2 }, () => ({ mode: 'random' as const, cards: [] })),
+      });
+      const totalEquity = result.equityPct + result.opponentResults!.reduce((sum, o) => sum + o.equityPct, 0);
+      expect(totalEquity).toBeCloseTo(100, 5);
+      for (const opp of result.opponentResults!) {
+        expect(opp.winPct + opp.tiePct + opp.losePct).toBeCloseTo(100, 5);
+      }
+    });
+  });
+
   describe('estimateTotalTrials', () => {
     const hero: [Card, Card] = [cards(['As'])[0], cards(['Ks'])[0]];
 

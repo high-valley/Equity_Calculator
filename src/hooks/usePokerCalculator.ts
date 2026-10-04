@@ -164,7 +164,15 @@ export function usePokerCalculator(): PokerCalculator {
       // precomputed for all 169 canonical starting hands (see preflopRandomTable.ts).
       const table = PREFLOP_RANDOM_TABLE[canonicalHandKey(hero[0], hero[1])];
       if (table) {
-        setResult(table);
+        // The table predates per-opponent results, but with exactly 2 players every
+        // showdown's equity sums to 100%, so the opponent's own split is just hero's
+        // mirrored (their win is hero's loss and vice versa; ties stay shared).
+        setResult({
+          ...table,
+          opponentResults: [
+            { winPct: table.losePct, tiePct: table.tiePct, losePct: table.winPct, equityPct: 100 - table.equityPct },
+          ],
+        });
         setIsCalculating(false);
         setProgressPct(null);
         return;

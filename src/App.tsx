@@ -84,6 +84,7 @@ function App() {
       <OpponentSelector
         opponents={calc.opponents}
         maxOpponents={calc.maxOpponents}
+        result={calc.result}
         onModeChange={calc.setOpponentMode}
         onOpenSlot={(oppIndex, index) => setPicker({ kind: 'opponent', oppIndex, index })}
         onAdd={calc.addOpponent}
