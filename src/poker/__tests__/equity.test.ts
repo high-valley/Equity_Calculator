@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { computeEquitySync, estimateOuterSteps } from '../equity';
+import { computeEquitySync, estimateTotalTrials } from '../equity';
 import { cards } from './testHelpers';
+import type { Card } from '../types';
 
 describe('computeEquitySync', () => {
   it('AA vs KK preflop (specific opponent): AA is a big favorite, win+tie+lose sum to 100%', () => {
@@ -8,7 +9,7 @@ describe('computeEquitySync', () => {
     const result = computeEquitySync({
       heroCards: [heroCards[0], heroCards[1]],
       boardCards: [],
-      opponent: { mode: 'specific', cards: cards(['Kd', 'Kc']) },
+      opponents: [{ mode: 'specific', cards: cards(['Kd', 'Kc']) }],
     });
     expect(result.trials).toBe(1712304); // C(48,5): all possible boards
     expect(result.winPct + result.tiePct + result.losePct).toBeCloseTo(100, 5);
@@ -21,7 +22,7 @@ describe('computeEquitySync', () => {
     const result = computeEquitySync({
       heroCards: [cards(['As'])[0], cards(['Ks'])[0]],
       boardCards: [],
-      opponent: { mode: 'specific', cards: cards(['Qh', 'Qc']) },
+      opponents: [{ mode: 'specific', cards: cards(['Qh', 'Qc']) }],
     });
     expect(result.equityPct).toBeGreaterThan(40);
     expect(result.equityPct).toBeLessThan(50);
@@ -31,7 +32,7 @@ describe('computeEquitySync', () => {
     const result = computeEquitySync({
       heroCards: [cards(['As'])[0], cards(['Ks'])[0]],
       boardCards: cards(['2s', '5s', '9s', '4h', '7d']),
-      opponent: { mode: 'random', cards: [] },
+      opponents: [{ mode: 'random', cards: [] }],
     });
     expect(result.trials).toBe(990); // C(45,2)
     expect(result.equityPct).toBeGreaterThan(90);
@@ -41,7 +42,7 @@ describe('computeEquitySync', () => {
     const result = computeEquitySync({
       heroCards: [cards(['7s'])[0], cards(['7h'])[0]],
       boardCards: cards(['7d', '2c', '9h', 'Ks']),
-      opponent: { mode: 'random', cards: [] },
+      opponents: [{ mode: 'random', cards: [] }],
     });
     expect(result.trials).toBe(45540); // C(46,2) * 44
     expect(result.equityPct).toBeGreaterThan(85);
@@ -51,7 +52,7 @@ describe('computeEquitySync', () => {
     const result = computeEquitySync({
       heroCards: [cards(['As'])[0], cards(['Ks'])[0]],
       boardCards: cards(['Kd', '7c', '2h']),
-      opponent: { mode: 'random', cards: [] },
+      opponents: [{ mode: 'random', cards: [] }],
     });
     expect(result.trials).toBe(1070190); // C(47,2) * C(45,2)
     expect(result.winPct + result.tiePct + result.losePct).toBeCloseTo(100, 5);
@@ -61,7 +62,7 @@ describe('computeEquitySync', () => {
     const result = computeEquitySync({
       heroCards: [cards(['As'])[0], cards(['Ks'])[0]],
       boardCards: cards(['Ad', 'Kd', 'Qd', 'Jd', '2c']),
-      opponent: { mode: 'specific', cards: cards(['2s', '3s']) },
+      opponents: [{ mode: 'specific', cards: cards(['2s', '3s']) }],
     });
     expect(result.trials).toBe(1);
     expect(result.winPct).toBe(100);
@@ -69,27 +70,115 @@ describe('computeEquitySync', () => {
     expect(result.losePct).toBe(0);
   });
 
-  it('estimateOuterSteps matches the true board-completion count for every phase', () => {
-    const hero: [import('../types').Card, import('../types').Card] = [cards(['As'])[0], cards(['Ks'])[0]];
-    expect(estimateOuterSteps({ heroCards: hero, boardCards: [], opponent: { mode: 'random', cards: [] } })).toBe(
-      2118760,
-    ); // C(50,5)
-    expect(
-      estimateOuterSteps({ heroCards: hero, boardCards: cards(['Kd', '7c', '2h']), opponent: { mode: 'random', cards: [] } }),
-    ).toBe(1081); // C(47,2)
-    expect(
-      estimateOuterSteps({
+  describe('multiple opponents', () => {
+    // A royal flush sitting entirely on the board means every player — hero and every
+    // opponent, however many, random or specific — ties for the best possible hand no
+    // matter what hole cards they hold. That makes the exact win/tie/equity split fully
+    // predictable, which is otherwise hard to hand-verify for a 3+-way pot.
+    const royalFlushBoard = cards(['Ts', 'Js', 'Qs', 'Ks', 'As']);
+    const hero: [Card, Card] = [cards(['2h'])[0], cards(['3h'])[0]];
+
+    it('2-way: hero ties a single specific opponent and splits the pot evenly', () => {
+      const result = computeEquitySync({
         heroCards: hero,
-        boardCards: cards(['Kd', '7c', '2h', '9s']),
-        opponent: { mode: 'random', cards: [] },
-      }),
-    ).toBe(46); // C(46,1)
-    expect(
-      estimateOuterSteps({
+        boardCards: royalFlushBoard,
+        opponents: [{ mode: 'specific', cards: cards(['2c', '3c']) }],
+      });
+      expect(result.trials).toBe(1);
+      expect(result.tiePct).toBe(100);
+      expect(result.equityPct).toBeCloseTo(50, 10);
+    });
+
+    it('3-way: hero ties two specific opponents and splits the pot three ways, not in half', () => {
+      const result = computeEquitySync({
         heroCards: hero,
-        boardCards: cards(['Kd', '7c', '2h', '9s', '3d']),
-        opponent: { mode: 'random', cards: [] },
-      }),
-    ).toBe(1);
+        boardCards: royalFlushBoard,
+        opponents: [
+          { mode: 'specific', cards: cards(['2c', '3c']) },
+          { mode: 'specific', cards: cards(['2d', '3d']) },
+        ],
+      });
+      expect(result.trials).toBe(1);
+      expect(result.tiePct).toBe(100);
+      expect(result.equityPct).toBeCloseTo(100 / 3, 10);
+    });
+
+    it('3-way with a random opponent: every possible random hand still ties, splitting three ways', () => {
+      const result = computeEquitySync({
+        heroCards: hero,
+        boardCards: royalFlushBoard,
+        opponents: [{ mode: 'specific', cards: cards(['2c', '3c']) }, { mode: 'random', cards: [] }],
+      });
+      expect(result.trials).toBe(903); // C(43,2): 52 - board(5) - hero(2) - specific opp(2)
+      expect(result.tiePct).toBe(100);
+      expect(result.equityPct).toBeCloseTo(100 / 3, 10);
+    });
+
+    it('hero with quads beats two weaker opponents outright (no ties)', () => {
+      const result = computeEquitySync({
+        heroCards: [cards(['As'])[0], cards(['Ah'])[0]],
+        boardCards: cards(['Ad', 'Ac', '7h', '2c', '3d']),
+        opponents: [
+          { mode: 'specific', cards: cards(['Kd', 'Kc']) },
+          { mode: 'specific', cards: cards(['Qd', 'Qc']) },
+        ],
+      });
+      expect(result.trials).toBe(1);
+      expect(result.winPct).toBe(100);
+      expect(result.equityPct).toBe(100);
+    });
+
+    it('2 random opponents at the river still enumerates exactly and sums to 100%', () => {
+      const result = computeEquitySync({
+        heroCards: [cards(['As'])[0], cards(['Ks'])[0]],
+        boardCards: cards(['2s', '5s', '9s', '4h', '7d']),
+        opponents: Array.from({ length: 2 }, () => ({ mode: 'random' as const, cards: [] })),
+      });
+      expect(result.trials).toBe(990 * 903); // C(45,2) * C(43,2)
+      expect(result.winPct + result.tiePct + result.losePct).toBeCloseTo(100, 5);
+    });
+  });
+
+  describe('estimateTotalTrials', () => {
+    const hero: [Card, Card] = [cards(['As'])[0], cards(['Ks'])[0]];
+
+    it('matches the true count for a single random opponent across every phase', () => {
+      expect(estimateTotalTrials({ heroCards: hero, boardCards: [], opponents: [{ mode: 'random', cards: [] }] })).toBe(
+        2097572400, // C(50,5) * C(45,2)
+      );
+      expect(
+        estimateTotalTrials({
+          heroCards: hero,
+          boardCards: cards(['Kd', '7c', '2h']),
+          opponents: [{ mode: 'random', cards: [] }],
+        }),
+      ).toBe(1070190); // C(47,2) * C(45,2)
+      expect(
+        estimateTotalTrials({
+          heroCards: hero,
+          boardCards: cards(['Kd', '7c', '2h', '9s', '3d']),
+          opponents: [{ mode: 'random', cards: [] }],
+        }),
+      ).toBe(990); // C(45,2)
+    });
+
+    it('a specific opponent contributes no enumeration by itself', () => {
+      expect(
+        estimateTotalTrials({
+          heroCards: hero,
+          boardCards: cards(['Kd', '7c', '2h', '9s', '3d']),
+          opponents: [{ mode: 'specific', cards: cards(['Qh', 'Qc']) }],
+        }),
+      ).toBe(1);
+    });
+
+    it('each extra random opponent multiplies the river trial count like one more C(pool,2)', () => {
+      const base = { heroCards: hero, boardCards: cards(['Kd', '7c', '2h', '9s', '3d']) };
+      // pool after hero+board = 45
+      expect(estimateTotalTrials({ ...base, opponents: [{ mode: 'random', cards: [] }] })).toBe(990); // C(45,2)
+      expect(
+        estimateTotalTrials({ ...base, opponents: [{ mode: 'random', cards: [] }, { mode: 'random', cards: [] }] }),
+      ).toBe(990 * 903); // C(45,2) * C(43,2)
+    });
   });
 });

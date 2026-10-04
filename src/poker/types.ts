@@ -34,11 +34,15 @@ export type Phase = 'preflop' | 'flop' | 'turn' | 'river';
 
 export type OpponentMode = 'random' | 'specific';
 
-export interface OpponentSpec {
+/** One seat at the table. A 'random' opponent's cards are unknown (ignored here);
+ *  a 'specific' opponent's cards, once fully chosen, must have length 2. */
+export interface OpponentSlot {
   mode: OpponentMode;
-  /** Only used when mode is 'specific'. Must have length 0, 1, or 2. */
   cards: Card[];
 }
+
+/** Hard cap on total opponents: hero + 8 is a standard 9-max table. */
+export const MAX_OPPONENTS = 8;
 
 export interface EquityResultData {
   winPct: number;

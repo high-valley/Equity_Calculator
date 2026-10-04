@@ -14,8 +14,11 @@ import { usePokerCalculator } from './hooks/usePokerCalculator';
 import { useBgm } from './hooks/useBgm';
 import type { Card } from './poker/types';
 
-type PickerKind = 'hero' | 'opponent' | 'board';
-type PickerTarget = { kind: 'hero' | 'opponent'; index: 0 | 1 } | { kind: 'board'; index: number } | null;
+type PickerTarget =
+  | { kind: 'hero'; index: 0 | 1 }
+  | { kind: 'opponent'; oppIndex: number; index: 0 | 1 }
+  | { kind: 'board'; index: number }
+  | null;
 
 function App() {
   const calc = usePokerCalculator();
@@ -27,14 +30,14 @@ function App() {
   function currentCardIdFor(target: PickerTarget): string | undefined {
     if (!target) return undefined;
     if (target.kind === 'hero') return calc.heroSlots[target.index]?.id;
-    if (target.kind === 'opponent') return calc.opponentSlots[target.index]?.id;
+    if (target.kind === 'opponent') return calc.opponents[target.oppIndex]?.slots[target.index]?.id;
     return calc.boardCards[target.index]?.id;
   }
 
   function handleSelect(card: Card): void {
     if (!picker) return;
     if (picker.kind === 'hero') calc.setHeroCard(picker.index, card);
-    else if (picker.kind === 'opponent') calc.setOpponentCard(picker.index, card);
+    else if (picker.kind === 'opponent') calc.setOpponentCard(picker.oppIndex, picker.index, card);
     else calc.setBoardCard(picker.index, card);
     setPicker(null);
   }
@@ -42,16 +45,17 @@ function App() {
   function handleClear(): void {
     if (!picker) return;
     if (picker.kind === 'hero') calc.clearHeroCard(picker.index);
-    else if (picker.kind === 'opponent') calc.clearOpponentCard(picker.index);
+    else if (picker.kind === 'opponent') calc.clearOpponentCard(picker.oppIndex, picker.index);
     else calc.clearBoardFrom(picker.index);
     setPicker(null);
   }
 
-  const pickerTitles: Record<PickerKind, string> = {
-    hero: 'あなたのカードを選択',
-    board: 'ボードのカードを選択',
-    opponent: '相手のカードを選択',
-  };
+  function pickerTitle(target: PickerTarget): string {
+    if (!target) return '';
+    if (target.kind === 'hero') return 'あなたのカードを選択';
+    if (target.kind === 'board') return 'ボードのカードを選択';
+    return calc.opponents.length > 1 ? `相手${target.oppIndex + 1}のカードを選択` : '相手のカードを選択';
+  }
 
   const hasCurrentCard = Boolean(picker && currentCardIdFor(picker));
 
@@ -68,16 +72,25 @@ function App() {
 
       <PhaseIndicator phase={calc.phase} />
 
-      <HandSelector title="あなたの手札" slots={calc.heroSlots} onOpen={(index) => setPicker({ kind: 'hero', index: index as 0 | 1 })} />
+      <HandSelector
+        title="あなたの手札"
+        slots={calc.heroSlots}
+        onOpen={(index) => setPicker({ kind: 'hero', index: index as 0 | 1 })}
+        onRandomize={calc.randomizeHero}
+      />
 
       <Board cards={calc.boardCards} onOpen={(index) => setPicker({ kind: 'board', index })} />
 
       <OpponentSelector
-        mode={calc.opponentMode}
-        slots={calc.opponentSlots}
+        opponents={calc.opponents}
+        maxOpponents={calc.maxOpponents}
         onModeChange={calc.setOpponentMode}
-        onOpenSlot={(index) => setPicker({ kind: 'opponent', index })}
+        onOpenSlot={(oppIndex, index) => setPicker({ kind: 'opponent', oppIndex, index })}
+        onAdd={calc.addOpponent}
+        onRemove={calc.removeOpponent}
       />
+
+      {calc.heavyWarning && <p className="heavy-warning">⚠ {calc.heavyWarning}</p>}
 
       <EquityResult
         result={calc.result}
@@ -95,7 +108,7 @@ function App() {
 
       {picker && (
         <CardPicker
-          title={pickerTitles[picker.kind]}
+          title={pickerTitle(picker)}
           usedCardIds={usedCardIds}
           currentCardId={currentCardIdFor(picker)}
           onSelect={handleSelect}
