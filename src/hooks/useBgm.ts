@@ -59,6 +59,27 @@ export function useBgm(): BgmControls {
     return () => document.removeEventListener('pointerdown', resumeIfBlocked);
   }, [enabled]);
 
+  // An <audio> element keeps playing when the tab is hidden or the app is sent to the
+  // background (iOS home screen, app switcher, screen lock), so pause it explicitly and
+  // pick back up when the page is visible again.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const sync = () => {
+      if (document.visibilityState === 'hidden') audio.pause();
+      else if (enabled) audio.play().catch(() => undefined);
+    };
+    const pauseNow = () => audio.pause();
+    document.addEventListener('visibilitychange', sync);
+    window.addEventListener('pagehide', pauseNow);
+    window.addEventListener('pageshow', sync);
+    return () => {
+      document.removeEventListener('visibilitychange', sync);
+      window.removeEventListener('pagehide', pauseNow);
+      window.removeEventListener('pageshow', sync);
+    };
+  }, [enabled]);
+
   useEffect(() => {
     const audio = audioRef.current;
     return () => audio?.pause();
