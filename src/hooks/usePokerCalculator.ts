@@ -33,6 +33,28 @@ function pickRandomTwo(pool: Card[]): [Card, Card] {
   return [pool[a], pool[b]];
 }
 
+/**
+ * Preflop, heads-up vs. an unknown hand is the one case exhaustive enumeration is too slow
+ * for live computation (~2.1B combinations) — but the answer only depends on the two hole
+ * card ranks and suitedness, so it's precomputed for all 169 canonical starting hands
+ * (see preflopRandomTable.ts). Returns that answer, or null when live computation applies.
+ */
+function lookupPreflopTable(input: EquityComputeInput): EquityResultData | null {
+  const { heroCards: hero, boardCards: board, opponents } = input;
+  if (opponents.length !== 1 || opponents[0].mode !== 'random' || board.length !== 0) return null;
+  const table = PREFLOP_RANDOM_TABLE[canonicalHandKey(hero[0], hero[1])];
+  if (!table) return null;
+  // The table predates per-opponent results, but with exactly 2 players every showdown's
+  // equity sums to 100%, so the opponent's own split is just hero's mirrored (their win is
+  // hero's loss and vice versa; ties stay shared).
+  return {
+    ...table,
+    opponentResults: [
+      { winPct: table.losePct, tiePct: table.tiePct, losePct: table.winPct, equityPct: 100 - table.equityPct },
+    ],
+  };
+}
+
 interface Validation {
   ready: boolean;
   message: string | null;
@@ -137,6 +159,7 @@ export function usePokerCalculator(): PokerCalculator {
   // can take a very long time. Warn before the user waits on it.
   const heavyWarning = useMemo(() => {
     if (!validation.ready || !validation.input) return null;
+    if (lookupPreflopTable(validation.input)) return null; // answered instantly from the table
     const total = estimateTotalTrials(validation.input);
     if (total > 2_000_000_000) return 'この組み合わせは計算量が非常に多く、結果が出るまでかなり長い時間（数時間以上になることも）かかります。';
     if (total > 20_000_000) return 'ハンド不明の相手が多い、または盤面が早い段階のため、計算に時間がかかります。';
@@ -156,27 +179,12 @@ export function usePokerCalculator(): PokerCalculator {
       return;
     }
 
-    const { heroCards: hero, boardCards: board, opponents: resolvedOpponents } = validation.input;
-    if (resolvedOpponents.length === 1 && resolvedOpponents[0].mode === 'random' && board.length === 0) {
-      // Preflop, heads-up vs. a fully random opponent is the one case exhaustive
-      // enumeration is too slow for live computation (~2.1B combinations) — but the
-      // answer only depends on the two hole card ranks and suitedness, so it's
-      // precomputed for all 169 canonical starting hands (see preflopRandomTable.ts).
-      const table = PREFLOP_RANDOM_TABLE[canonicalHandKey(hero[0], hero[1])];
-      if (table) {
-        // The table predates per-opponent results, but with exactly 2 players every
-        // showdown's equity sums to 100%, so the opponent's own split is just hero's
-        // mirrored (their win is hero's loss and vice versa; ties stay shared).
-        setResult({
-          ...table,
-          opponentResults: [
-            { winPct: table.losePct, tiePct: table.tiePct, losePct: table.winPct, equityPct: 100 - table.equityPct },
-          ],
-        });
-        setIsCalculating(false);
-        setProgressPct(null);
-        return;
-      }
+    const tableResult = lookupPreflopTable(validation.input);
+    if (tableResult) {
+      setResult(tableResult);
+      setIsCalculating(false);
+      setProgressPct(null);
+      return;
     }
 
     const worker = workerRef.current;
