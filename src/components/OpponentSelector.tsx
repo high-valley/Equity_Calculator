@@ -24,10 +24,10 @@ export function OpponentSelector({
   onRandomize,
 }: OpponentSelectorProps) {
   const showNumbers = opponents.length > 1;
-  // With exactly 1 opponent, "random" stays an abstract average over every possible
-  // hand (cheap to compute exactly). With 2+, an abstract random opponent multiplies
-  // enumeration cost per extra opponent, so each one always holds a concrete hand
-  // instead — picked by the 🎲 button or chosen by hand, never left abstract.
+  // "ハンド不明" (mode 'random') is an exact average over every possible hand — cheap with
+  // one opponent, but each extra unknown opponent multiplies enumeration cost, so with 2+
+  // every opponent holds a concrete hand. The 🎲 button is separate from that: it always
+  // deals a concrete random hand (mode 'specific').
   const singleOpponent = opponents.length === 1;
 
   return (
@@ -48,14 +48,14 @@ export function OpponentSelector({
             <div key={oppIndex} className="opp-item">
               <div className="opp-item-header">
                 {showNumbers && <span className="opp-label">相手{oppIndex + 1}</span>}
-                {singleOpponent ? (
+                {singleOpponent && (
                   <div className="segmented segmented-sm">
                     <button
                       type="button"
                       className={`segmented-btn ${opp.mode === 'random' ? 'segmented-btn-active' : ''}`}
                       onClick={() => onModeChange(oppIndex, 'random')}
                     >
-                      ランダム
+                      ハンド不明
                     </button>
                     <button
                       type="button"
@@ -65,17 +65,19 @@ export function OpponentSelector({
                       ハンド指定
                     </button>
                   </div>
-                ) : (
-                  <button type="button" className="randomize-btn" onClick={() => onRandomize(oppIndex)}>
-                    🎲 ランダム
-                  </button>
                 )}
+                <button type="button" className="randomize-btn" onClick={() => onRandomize(oppIndex)}>
+                  🎲 ランダム
+                </button>
                 {opponents.length > 1 && (
                   <button type="button" className="opp-remove-btn" onClick={() => onRemove(oppIndex)} aria-label={`相手${oppIndex + 1}を削除`}>
                     ×
                   </button>
                 )}
               </div>
+              {opp.mode === 'random' && singleOpponent && (
+                <p className="opp-unknown-note">相手の手札がわからない状態で、ありうる全てのハンドを平均して計算します。</p>
+              )}
               {(opp.mode === 'specific' || !singleOpponent) && (
                 <div className="card-row">
                   {opp.slots.map((card, cardIndex) => (

@@ -139,7 +139,7 @@ export function usePokerCalculator(): PokerCalculator {
     if (!validation.ready || !validation.input) return null;
     const total = estimateTotalTrials(validation.input);
     if (total > 2_000_000_000) return 'この組み合わせは計算量が非常に多く、結果が出るまでかなり長い時間（数時間以上になることも）かかります。';
-    if (total > 20_000_000) return 'ランダムの相手が多い、または盤面が早い段階のため、計算に時間がかかります。';
+    if (total > 20_000_000) return 'ハンド不明の相手が多い、または盤面が早い段階のため、計算に時間がかかります。';
     return null;
   }, [validation]);
 
