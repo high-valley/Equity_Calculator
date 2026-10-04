@@ -124,6 +124,96 @@ button {
   font-size: 0.88rem;
 }
 
+.panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.panel-header-row .panel-title {
+  margin-bottom: 0;
+}
+
+.randomize-btn,
+.opp-add-btn {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: rgba(212, 175, 96, 0.12);
+  color: var(--gold-bright);
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Opponent list */
+.opp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.opp-item {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.opp-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.opp-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  width: 44px;
+}
+
+.opp-item-header .segmented-sm {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.segmented-sm .segmented-btn {
+  padding: 7px 4px;
+  font-size: 0.76rem;
+}
+
+.opp-item .card-row {
+  margin-top: 10px;
+}
+
+.opp-remove-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.heavy-warning {
+  margin: -4px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(193, 91, 91, 0.12);
+  border: 1px solid rgba(193, 91, 91, 0.4);
+  color: #e88b8b;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
 .card-row {
   display: flex;
   gap: 6px;
