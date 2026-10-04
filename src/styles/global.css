@@ -201,6 +201,11 @@ button {
   font-size: 1rem;
   cursor: pointer;
   flex-shrink: 0;
+  margin-left: auto;
+}
+
+.opp-item-header .randomize-btn {
+  flex-shrink: 0;
 }
 
 .heavy-warning {

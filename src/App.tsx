@@ -88,6 +88,7 @@ function App() {
         onOpenSlot={(oppIndex, index) => setPicker({ kind: 'opponent', oppIndex, index })}
         onAdd={calc.addOpponent}
         onRemove={calc.removeOpponent}
+        onRandomize={calc.randomizeOpponent}
       />
 
       {calc.heavyWarning && <p className="heavy-warning">⚠ {calc.heavyWarning}</p>}

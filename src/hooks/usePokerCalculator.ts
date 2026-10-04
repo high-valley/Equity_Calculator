@@ -90,6 +90,7 @@ export interface PokerCalculator {
   setOpponentMode: (oppIndex: number, mode: OpponentMode) => void;
   setOpponentCard: (oppIndex: number, cardIndex: 0 | 1, card: Card) => void;
   clearOpponentCard: (oppIndex: number, cardIndex: 0 | 1) => void;
+  randomizeOpponent: (oppIndex: number) => void;
   reset: () => void;
 }
 
@@ -232,7 +233,23 @@ export function usePokerCalculator(): PokerCalculator {
   }
 
   function addOpponent(): void {
-    setOpponents((prev) => (prev.length >= MAX_OPPONENTS ? prev : [...prev, { mode: 'random', slots: [null, null] }]));
+    setOpponents((prev) => {
+      if (prev.length >= MAX_OPPONENTS) return prev;
+      const next = [...prev];
+      if (next.length === 1 && (next[0].mode !== 'specific' || compact(next[0].slots).length < 2)) {
+        // Moving from 1 to 2+ opponents: an abstract "random" opponent multiplies
+        // enumeration cost (see equity.ts), so every opponent beyond the first must
+        // have a concrete hand. Give the sole existing opponent one now.
+        const pool = getRemainingCards([...heroCards, ...boardCards]);
+        const [a, b] = pickRandomTwo(pool);
+        next[0] = { mode: 'specific', slots: [a, b] };
+      }
+      const excluded = [...heroCards, ...boardCards, ...next.flatMap((o) => compact(o.slots))];
+      const pool = getRemainingCards(excluded);
+      const [a, b] = pickRandomTwo(pool);
+      next.push({ mode: 'specific', slots: [a, b] });
+      return next;
+    });
   }
 
   function removeOpponent(oppIndex: number): void {
@@ -243,6 +260,19 @@ export function usePokerCalculator(): PokerCalculator {
     setOpponents((prev) =>
       prev.map((o, i) => (i === oppIndex ? { mode, slots: mode === 'random' ? [null, null] : o.slots } : o)),
     );
+  }
+
+  function randomizeOpponent(oppIndex: number): void {
+    setOpponents((prev) => {
+      const excluded = [
+        ...heroCards,
+        ...boardCards,
+        ...prev.flatMap((o, i) => (i === oppIndex ? [] : compact(o.slots))),
+      ];
+      const pool = getRemainingCards(excluded);
+      const [a, b] = pickRandomTwo(pool);
+      return prev.map((o, i) => (i === oppIndex ? { mode: 'specific' as const, slots: [a, b] } : o));
+    });
   }
 
   function setOpponentCard(oppIndex: number, cardIndex: 0 | 1, card: Card): void {
@@ -297,6 +327,7 @@ export function usePokerCalculator(): PokerCalculator {
     setOpponentMode,
     setOpponentCard,
     clearOpponentCard,
+    randomizeOpponent,
     reset,
   };
 }
