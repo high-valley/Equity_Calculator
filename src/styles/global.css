@@ -236,6 +236,33 @@ button {
   line-height: 1.5;
 }
 
+.hand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hand-equity {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.hand-equity-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.hand-equity-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--gold-bright);
+  font-variant-numeric: tabular-nums;
+}
+
 .card-row {
   display: flex;
   gap: 6px;

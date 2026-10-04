@@ -77,6 +77,7 @@ function App() {
         slots={calc.heroSlots}
         onOpen={(index) => setPicker({ kind: 'hero', index: index as 0 | 1 })}
         onRandomize={calc.randomizeHero}
+        equityPct={calc.result?.equityPct ?? null}
       />
 
       <Board cards={calc.boardCards} onOpen={(index) => setPicker({ kind: 'board', index })} />
