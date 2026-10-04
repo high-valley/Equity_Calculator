@@ -4,7 +4,6 @@ import { RANK_VALUE } from './cards';
 import type { Card, EquityResultData, OpponentSlot } from './types';
 
 const SUIT_INDEX: Record<Card['suit'], number> = { spades: 0, hearts: 1, diamonds: 2, clubs: 3 };
-const NO_SCORE = -1; // lower than any real hand score, so the first opponent always sets the max
 
 function codeOf(card: Card): number {
   return toCardCode(RANK_VALUE[card.rank], SUIT_INDEX[card.suit]);
@@ -87,6 +86,13 @@ export function* computeEquityGen(input: EquityComputeInput): Generator<EquityPr
   const specificOpponents = opponents.filter((o) => o.mode === 'specific');
   const randomCount = opponents.length - specificOpponents.length;
 
+  // Where each opponent's score ends up in the per-trial `allOppScores` buffer, keyed by
+  // its position in `specificBufs`/`randomBufs` — both filters preserve the original
+  // opponents order, so these are just "which original slot is the i-th specific/random one".
+  const specificOrigIndex: number[] = [];
+  const randomOrigIndex: number[] = [];
+  opponents.forEach((o, i) => (o.mode === 'specific' ? specificOrigIndex : randomOrigIndex).push(i));
+
   const usedCards: Card[] = [...heroCards, ...boardCards, ...specificOpponents.flatMap((o) => o.cards)];
   const pool = getRemainingCards(usedCards).map(codeOf);
 
@@ -109,12 +115,21 @@ export function* computeEquityGen(input: EquityComputeInput): Generator<EquityPr
   const randomBufs: Int32Array[] = Array.from({ length: randomCount }, () => new Int32Array(7));
   const oppPool = new Int32Array(pool.length);
 
+  // Reused across every trial: holds each opponent's current score (by original opponents
+  // index) so a leaf can see everyone at once, not just the best of them.
+  const allOppScores = new Int32Array(opponents.length);
+
   let win = 0;
   let tie = 0;
   let lose = 0;
   let trials = 0;
   let equitySum = 0;
   let sinceYield = 0;
+
+  const oppWin = new Float64Array(opponents.length);
+  const oppTie = new Float64Array(opponents.length);
+  const oppLose = new Float64Array(opponents.length);
+  const oppEquitySum = new Float64Array(opponents.length);
 
   const total = estimateTotalTrials(input);
   // Yield roughly a few times a second: often enough for live progress and prompt
@@ -126,28 +141,46 @@ export function* computeEquityGen(input: EquityComputeInput): Generator<EquityPr
     for (let i = 0; i < completionLen; i++) buf[2 + boardKnownCodes.length + i] = completionCodes[i];
   }
 
-  function tallyLeaf(heroScore: number, oppMax: number, oppCount: number): void {
+  // Every player (hero + each opponent) is scored against the same showdown, so a single
+  // pass finds the overall best score and how many players share it; whoever's in that top
+  // group wins outright (alone) or splits the pot 1/(group size) (tied).
+  function tallyLeaf(heroScore: number): void {
     trials++;
-    if (heroScore > oppMax) {
-      win++;
-      equitySum += 1;
-    } else if (heroScore === oppMax) {
-      tie++;
-      equitySum += 1 / (oppCount + 1);
+    let max = heroScore;
+    for (let i = 0; i < allOppScores.length; i++) if (allOppScores[i] > max) max = allOppScores[i];
+    let count = heroScore === max ? 1 : 0;
+    for (let i = 0; i < allOppScores.length; i++) if (allOppScores[i] === max) count++;
+
+    if (heroScore === max) {
+      if (count === 1) {
+        win++;
+        equitySum += 1;
+      } else {
+        tie++;
+        equitySum += 1 / count;
+      }
     } else {
       lose++;
     }
+
+    for (let i = 0; i < allOppScores.length; i++) {
+      if (allOppScores[i] === max) {
+        if (count === 1) {
+          oppWin[i]++;
+          oppEquitySum[i] += 1;
+        } else {
+          oppTie[i]++;
+          oppEquitySum[i] += 1 / count;
+        }
+      } else {
+        oppLose[i]++;
+      }
+    }
   }
 
-  function* dealRandomOpponents(
-    poolLen: number,
-    depth: number,
-    oppMax: number,
-    oppCount: number,
-    heroScore: number,
-  ): Generator<EquityProgress, void, void> {
+  function* dealRandomOpponents(poolLen: number, depth: number, heroScore: number): Generator<EquityProgress, void, void> {
     if (depth === randomCount) {
-      tallyLeaf(heroScore, oppMax, oppCount);
+      tallyLeaf(heroScore);
       sinceYield++;
       if (sinceYield >= CHUNK_TRIALS) {
         sinceYield = 0;
@@ -156,13 +189,12 @@ export function* computeEquityGen(input: EquityComputeInput): Generator<EquityPr
       return;
     }
     const buf = randomBufs[depth];
+    const origIndex = randomOrigIndex[depth];
     for (let i = 0; i < poolLen; i++) {
       for (let j = i + 1; j < poolLen; j++) {
         buf[0] = oppPool[i];
         buf[1] = oppPool[j];
-        const score = fastBestScoreOf7(buf);
-        const newMax = score > oppMax ? score : oppMax;
-        const newCount = score > oppMax ? 1 : score === oppMax ? oppCount + 1 : oppCount;
+        allOppScores[origIndex] = fastBestScoreOf7(buf);
 
         // Remove i and j (swap-to-end, largest index first so the second removal's
         // "last slot" index is still valid); each swap is its own inverse, so undoing
@@ -170,7 +202,7 @@ export function* computeEquityGen(input: EquityComputeInput): Generator<EquityPr
         swap(oppPool, j, poolLen - 1);
         swap(oppPool, i, poolLen - 2);
 
-        yield* dealRandomOpponents(poolLen - 2, depth + 1, newMax, newCount, heroScore);
+        yield* dealRandomOpponents(poolLen - 2, depth + 1, heroScore);
 
         swap(oppPool, i, poolLen - 2);
         swap(oppPool, j, poolLen - 1);
@@ -186,21 +218,13 @@ export function* computeEquityGen(input: EquityComputeInput): Generator<EquityPr
     setBoardPortion(heroBuf, completionCodes, completionLen);
     const heroScore = fastBestScoreOf7(heroBuf);
 
-    let baseMax = NO_SCORE;
-    let baseCount = 0;
-    for (const buf of specificBufs) {
-      setBoardPortion(buf, completionCodes, completionLen);
-      const score = fastBestScoreOf7(buf);
-      if (score > baseMax) {
-        baseMax = score;
-        baseCount = 1;
-      } else if (score === baseMax) {
-        baseCount++;
-      }
+    for (let i = 0; i < specificBufs.length; i++) {
+      setBoardPortion(specificBufs[i], completionCodes, completionLen);
+      allOppScores[specificOrigIndex[i]] = fastBestScoreOf7(specificBufs[i]);
     }
 
     if (randomCount === 0) {
-      tallyLeaf(heroScore, baseMax, baseCount);
+      tallyLeaf(heroScore);
       sinceYield++;
       if (sinceYield >= CHUNK_TRIALS) {
         sinceYield = 0;
@@ -221,7 +245,7 @@ export function* computeEquityGen(input: EquityComputeInput): Generator<EquityPr
       oppPool[oppPoolLen++] = pool[i];
     }
 
-    yield* dealRandomOpponents(oppPoolLen, 0, baseMax, baseCount, heroScore);
+    yield* dealRandomOpponents(oppPoolLen, 0, heroScore);
   }
 
   const n = pool.length;
@@ -244,6 +268,12 @@ export function* computeEquityGen(input: EquityComputeInput): Generator<EquityPr
     losePct: (lose / trials) * 100,
     equityPct: (equitySum / trials) * 100,
     trials,
+    opponentResults: Array.from({ length: opponents.length }, (_, i) => ({
+      winPct: (oppWin[i] / trials) * 100,
+      tiePct: (oppTie[i] / trials) * 100,
+      losePct: (oppLose[i] / trials) * 100,
+      equityPct: (oppEquitySum[i] / trials) * 100,
+    })),
   };
 }
 

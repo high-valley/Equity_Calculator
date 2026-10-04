@@ -139,7 +139,7 @@ export function usePokerCalculator(): PokerCalculator {
     if (!validation.ready || !validation.input) return null;
     const total = estimateTotalTrials(validation.input);
     if (total > 2_000_000_000) return 'この組み合わせは計算量が非常に多く、結果が出るまでかなり長い時間（数時間以上になることも）かかります。';
-    if (total > 20_000_000) return 'ランダムの相手が多い、または盤面が早い段階のため、計算に時間がかかります。';
+    if (total > 20_000_000) return 'ハンド不明の相手が多い、または盤面が早い段階のため、計算に時間がかかります。';
     return null;
   }, [validation]);
 
@@ -164,7 +164,15 @@ export function usePokerCalculator(): PokerCalculator {
       // precomputed for all 169 canonical starting hands (see preflopRandomTable.ts).
       const table = PREFLOP_RANDOM_TABLE[canonicalHandKey(hero[0], hero[1])];
       if (table) {
-        setResult(table);
+        // The table predates per-opponent results, but with exactly 2 players every
+        // showdown's equity sums to 100%, so the opponent's own split is just hero's
+        // mirrored (their win is hero's loss and vice versa; ties stay shared).
+        setResult({
+          ...table,
+          opponentResults: [
+            { winPct: table.losePct, tiePct: table.tiePct, losePct: table.winPct, equityPct: 100 - table.equityPct },
+          ],
+        });
         setIsCalculating(false);
         setProgressPct(null);
         return;

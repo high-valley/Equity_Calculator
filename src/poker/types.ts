@@ -44,13 +44,20 @@ export interface OpponentSlot {
 /** Hard cap on total opponents: hero + 8 is a standard 9-max table. */
 export const MAX_OPPONENTS = 8;
 
-export interface EquityResultData {
+export interface PlayerEquityResultData {
   winPct: number;
   tiePct: number;
   losePct: number;
   equityPct: number;
+}
+
+export interface EquityResultData extends PlayerEquityResultData {
   /** Number of opponent/board scenarios enumerated. */
   trials: number;
+  /** Each opponent's own win/tie/lose/equity, in the same order as the request's
+   *  `opponents` array. Optional only because the precomputed preflop-vs-random
+   *  table predates this field; everything computed live always has it. */
+  opponentResults?: PlayerEquityResultData[];
 }
 
 export interface DrawInfo {
